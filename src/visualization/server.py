@@ -1,8 +1,9 @@
 import mesa
+import mesa_geo as mg
 
-from src.agent.building import Building
 from src.agent.commuter import Commuter
-from src.agent.geo_agents import Driveway, LakeAndRiver, Walkway
+from src.agent.geo_agents import Road
+from src.model.model import BuffaloCommutingPatterns
 
 
 class ClockElement(mesa.visualization.TextElement):
@@ -14,35 +15,32 @@ class ClockElement(mesa.visualization.TextElement):
         return f"Day {model.day}, {model.hour:02d}:{model.minute:02d}"
 
 
+model_params = {
+    "data_crs": "epsg:3857",
+    "commuter_file": "data/erie/population/work_population_sample_1.shp.zip",
+    "road_file": "data/erie/shp_zip/erie_road_p.shp.zip",
+    "show_road": mesa.visualization.Checkbox("Show Road", value=False),
+    "commuter_speed": mesa.visualization.Slider(
+        "Commuter Moving Speed (multiples of 12km/h)",
+        value=1.0,
+        min_value=0.1,
+        max_value=3.0,
+        step=0.1,
+    ),
+}
+
+
 def agent_draw(agent):
-    portrayal = dict()
-
+    portrayal = {}
     portrayal["color"] = "White"
-    if isinstance(agent, Driveway):
-        portrayal["color"] = "#bdbdbd"
-        #portrayal["color"] = "#D08004"
-    elif isinstance(agent, Walkway):
+    if isinstance(agent, Road):
         portrayal["color"] = "Brown"
-    elif isinstance(agent, LakeAndRiver):
-        portrayal["color"] = "#04D0CD"
-    elif isinstance(agent, Building):
-        portrayal["color"] = "Blue"
-        # if agent.function is None:
-        #     portrayal["color"] = "Grey"
-        # elif agent.function == 1.0:
-        #     portrayal["color"] = "Blue"
-        # elif agent.function == 2.0:
-        #     portrayal["color"] = "Green"
-        # else:
-        #     portrayal["color"] = "Grey"
     elif isinstance(agent, Commuter):
-        if agent.status == "at-home":
+        if agent.status == "home":
             portrayal["color"] = "Green"
-
-        elif agent.status == "at-daytime-location":
-            portrayal["color"] = "Black"
-
-        elif agent.status == "commuting":
+        elif agent.status == "work":
+            portrayal["color"] = "Blue"
+        elif agent.status == "transport":
             portrayal["color"] = "Red"
         else:
             portrayal["color"] = "Grey"
@@ -52,7 +50,6 @@ def agent_draw(agent):
 
 
 clock_element = ClockElement()
-
 status_chart = mesa.visualization.ChartModule(
     [
         {"Label": "status_home", "Color": "Green"},
@@ -62,10 +59,10 @@ status_chart = mesa.visualization.ChartModule(
     data_collector_name="datacollector",
 )
 
-friendship_chart = mesa.visualization.ChartModule(
-    [
-        {"Label": "friendship_home", "Color": "Green"},
-        {"Label": "friendship_work", "Color": "Blue"},
-    ],
-    data_collector_name="datacollector",
+map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
+server = mesa.visualization.ModularServer(
+    BuffaloCommutingPatterns,
+    [map_element, clock_element, status_chart],
+    "Urban Commuting in Buffalo",
+    model_params,
 )
