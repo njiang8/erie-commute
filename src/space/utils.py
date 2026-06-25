@@ -1,21 +1,12 @@
-from typing import Tuple, List
+from typing import List, Tuple
 
 import geopandas as gpd
+import mesa
 import numpy as np
 import pyproj
-import mesa
-from shapely.geometry import Point
 from shapely.geometry import LineString, MultiLineString
 from shapely.ops import transform
 
-#Kids to Geo DataFram
-def _to_gpd(data):
-    data['geometry'] = data.apply(lambda x: Point((float(x.long), float(x.lat))), axis=1)
-    #data['geometry'] = data.apply(lambda x: Point((float(x.lat), float(x.long))), axis=1)
-    gdf = gpd.GeoDataFrame(data, geometry='geometry')
-    gdf = gdf.set_crs('epsg:4326')
-    print("population size", gdf.shape)
-    return gdf
 
 def get_coord_matrix(
     x_min: float, x_max: float, y_min: float, y_max: float
